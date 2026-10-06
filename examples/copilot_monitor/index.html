@@ -57,7 +57,8 @@
 <script>
 const fmt=n=>Math.round(n).toLocaleString(), $=id=>document.getElementById(id), recs=new Map();
 const td=(v,cls)=>{const e=document.createElement('td');if(cls)e.className=cls;if(v instanceof Node)e.append(v);else e.textContent=v;return e};
-let cfg={judge_enabled:false};
+let cfg={judge_enabled:false}, live='connecting…', judgeLabel='';
+const setStatus=()=>{$('status').textContent=[live,judgeLabel].filter(Boolean).join(' · ')};
 const sum=(a,f)=>a.reduce((s,r)=>s+f(r),0), mean=a=>a.length?sum(a,x=>x)/a.length:null;
 const jscore=r=>r.judge?.status==='done'?(r.judge.correctness+r.judge.instruction_following)/2:null;
 const jr=r=>!r.judge?'(judge off)':r.judge.status==='pending'?'judging…':r.judge.reason;
@@ -118,12 +119,12 @@ function render(){
 // ---- controls ----
 function showCur(l){const on=l&&l.run;$('stop').disabled=!on;
   $('cur').textContent=on?`● Recording: ${l.condition} · ${l.task} · run #${l.run}`:'Not recording — prompts are not counted in the comparison.'}
-fetch('/config').then(r=>r.json()).then(l=>{cfg=l;render();showCur(l);$('status').dataset.judge=l.judge_enabled?`judge: ${l.judge_model}`:'judge: off';if(l.run){$('cond').value=l.condition;$('task').value=l.task}});
+fetch('/config').then(r=>r.json()).then(l=>{cfg=l;render();showCur(l);judgeLabel=l.judge_enabled?`judge: ${l.judge_model}`:'judge: off';setStatus();if(l.run){$('cond').value=l.condition;$('task').value=l.task}});
 $('ctl').onsubmit=async e=>{e.preventDefault();showCur(await post('/config',{condition:$('cond').value,task:$('task').value}))};
 $('stop').onclick=async()=>showCur(await post('/stop',{}));
 $('tf').onchange=render;
 
 const es=new EventSource('/stream');
-es.onopen=()=>$('status').textContent='● live · '+($('status').dataset.judge||''); es.onerror=()=>$('status').textContent='disconnected';
+es.onopen=()=>{live='● live';setStatus()}; es.onerror=()=>{live='disconnected';setStatus()};
 es.onmessage=m=>{const r=JSON.parse(m.data);recs.set(r.id,r);render()};
 </script></body></html>
