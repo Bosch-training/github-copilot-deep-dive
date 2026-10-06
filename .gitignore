@@ -1,0 +1,12 @@
+.skills/
+Assessment/
+Project-Handoff.md
+_to_delete/
+course-content/
+course-outline/old/
+slide-content/
+
+# Local secrets and virtualenvs
+.env
+.venv/
+__pycache__/
